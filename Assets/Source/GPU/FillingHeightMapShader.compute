@@ -9,9 +9,13 @@ float planeSize;
 float accumulationMaterialSpeed;
 float deltaTime;
 
+// this.x - world sphere X
+// this.y - world sphere Z
+// this.z - world radius
 float3 previousWorldSphere;
 float3 currentWorldSphere;
 
+//it is necessary for the realization of unconditional fulfillment
 int Inverse(int value)
 {
     return 1 - value;
@@ -26,7 +30,13 @@ int IsPixelInTrace(float2 pixel, float2 centerA, float2 centerB, float radiusA, 
 
     int isValidSquaredAB = squaredAB > 0;
     
+    //equivalent:
+    //if(squaredAB > 0)
+    //  float t = clamp((dot(AP, AB) / squaredAB), 0.0, 1.0)
+    //else
+    //  float t = clamp((dot(AP, AB) / 0.0001), 0.0, 1.0)
     float t = clamp((dot(AP, AB) / (isValidSquaredAB * squaredAB + Inverse(isValidSquaredAB) * 0.0001)), 0.0, 1.0);
+    //unconditional
 
     float currentRadius = lerp(radiusA, radiusB, t);
     
@@ -60,7 +70,13 @@ void UpdateMap (uint3 id : SV_DispatchThreadID)
     
     float currentValue = heightMap[id.xy];
     
+    //equivalent:
+    //if(isFillFactor)
+    //  float newValue = currentValue + min(additiveHeight, 1.0 - currentValue)
+    //else
+    //  float newValue = currentValue;
     float newValue = currentValue + isFillFactor * min(additiveHeight, 1.0 - currentValue);
+    //unconditional
     
     heightMap[id.xy] = min(newValue, 1.0);
 }
