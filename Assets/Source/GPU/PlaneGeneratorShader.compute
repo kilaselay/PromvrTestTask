@@ -1,0 +1,60 @@
+#pragma kernel GenerateVertices
+#pragma kernel GenerateTriangles
+
+struct VertexData
+{
+    float3 position;
+    float3 normal;
+    float2 uv;
+};
+
+float planeSideSize;
+
+int verticesPerSide;
+int quadsPerSide;
+
+RWStructuredBuffer<VertexData> verticesData;
+RWStructuredBuffer<int> triangles;
+
+// xy: verticesPerSide count
+[numthreads(8, 8, 1)]
+void GenerateVertices(uint3 id : SV_DispatchThreadID)
+{
+    if(id.x >= verticesPerSide || id.y >= verticesPerSide)
+        return;
+    
+    int vertexID = id.y * verticesPerSide + id.x;
+    
+    float halfSize = planeSideSize * 0.5;
+    float step = planeSideSize / quadsPerSide;
+    
+    float2 position = float2(-halfSize + id.x * step, -halfSize + id.y * step);
+    
+    VertexData data;
+    
+    data.position = float3(position.x, 0.0, position.y);
+    data.normal = float3(0.0, 1.0, 0.0);
+    data.uv = float2((float) id.x / quadsPerSide, (float) id.y / quadsPerSide);
+    
+    verticesData[vertexID] = data;
+}
+
+// xy: quadsPerSide count
+[numthreads(8, 8, 1)]
+void GenerateTriangles(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= quadsPerSide || id.y >= quadsPerSide)
+        return;
+    
+    int verticesOffset = id.y * verticesPerSide + id.x;
+    int trianglesOffset = (id.y * quadsPerSide + id.x) * 6;
+    
+    //Fill quad -> 2 triangles
+    triangles[trianglesOffset] = verticesOffset + verticesPerSide;
+    triangles[trianglesOffset + 1] = verticesOffset + 1;
+    triangles[trianglesOffset + 2] = verticesOffset;
+    
+    triangles[trianglesOffset + 3] = verticesOffset + verticesPerSide;
+    triangles[trianglesOffset + 4] = verticesOffset + 1 + verticesPerSide;
+    triangles[trianglesOffset + 5] = verticesOffset + 1;
+}
