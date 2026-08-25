@@ -3,20 +3,20 @@ using UnityEngine;
 
 namespace PromvrTestTask
 {
-    public class HemiSphereController : MonoBehaviour
+    public class HemiSphereController : MonoBehaviour, IHemiSphere
     {
         private const float MinRadius = 0.1f;
 
-        [SerializeField]
+        [SerializeField, Min(0.1f)]
         private float _velocity = 5f;
 
-        [SerializeField]
+        [SerializeField, Min(MinRadius)]
         private float _baseRadius = 1.5f;
 
-        [SerializeField]
+        [SerializeField, Min(0.1f)]
         private float _radiusAmplitude = 1.2f;
 
-        [SerializeField]
+        [SerializeField, Min(0.1f)]
         private float _radiusFrequency = 1f;
 
         [SerializeField]
@@ -26,7 +26,7 @@ namespace PromvrTestTask
 
         private float _elapsedTime;
 
-        private InputService _inputService;
+        private IInputService _inputService;
 
         private Vector2 _borders;
 
@@ -49,13 +49,14 @@ namespace PromvrTestTask
             UpdateSphereSize();
         }
 
-        public void SetData(InputService inputService, Vector2 borders)
+        public void SetData(IInputService inputService, Vector2 borders)
         {
             _inputService = inputService;
 
             _borders = borders;
 #if UNITY_EDITOR
             _inputService.ClickActionButton += OnClickActionButton;
+            _inputService.ClickResetButton += OnClickResetButton;
 #endif
         }
 
@@ -99,6 +100,8 @@ namespace PromvrTestTask
 #if UNITY_EDITOR
         private void OnClickActionButton() => _isActive = !_isActive;
 
+        private void OnClickResetButton() => _isActive = false;
+
         private void OnDrawGizmos()
         {
             if (!_isDrawGizmo)
@@ -117,6 +120,7 @@ namespace PromvrTestTask
         {
 #if UNITY_EDITOR
             _inputService.ClickActionButton -= OnClickActionButton;
+            _inputService.ClickResetButton -= OnClickResetButton;
 #endif
         }
     }

@@ -1,3 +1,5 @@
+using System;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace PromvrTestTask
@@ -37,6 +39,8 @@ namespace PromvrTestTask
 
         public void Initialize()
         {
+            Validate();
+
             _planeGeneratorShader = Instantiate(_planeGeneratorShader);
 
             var planeGenerator = new PlaneGenerator(_planeGeneratorShader);
@@ -80,6 +84,16 @@ namespace PromvrTestTask
                 return;
 #endif
             Graphics.DrawMesh(_planeMesh, _meshMatrix, _planeMaterial, _layerMask, Camera.main, 0, _materialProperties);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void Validate()
+        {
+            if (_planeGeneratorShader == null)
+                throw new NullReferenceException("Plane Generator Compute Shader is null");
+
+            if (_planeMaterial == null)
+                throw new NullReferenceException("Plaane material is null");
         }
 
         private void OnDestroy()

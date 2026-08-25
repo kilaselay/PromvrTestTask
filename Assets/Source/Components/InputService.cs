@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace PromvrTestTask
 {
-    public class InputService : MonoBehaviour
+    public class InputService : MonoBehaviour, IInputService
     {
         public event Action ClickActionButton;
         public event Action ClickResetButton;

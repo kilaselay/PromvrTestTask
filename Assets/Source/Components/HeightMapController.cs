@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
@@ -13,19 +14,19 @@ namespace PromvrTestTask
         [SerializeField, Min(128)]
         private int _textureSize = 512;
 
-        [SerializeField, Space, Header("Material Settings")]
+        [SerializeField, Min(0.01f), Space, Header("Material Settings")]
         private float _accumulationMaterialSpeed = 0.1f;
 
-        [SerializeField]
+        [SerializeField, Min(0)]
         private float _additiveSpeedPerSecondFactor = 1f;
 
         private float _currentAccumulationSpeed;
 
         private RenderTexture _texture;
 
-        private InputService _inputService;
+        private IInputService _inputService;
 
-        private HemiSphereController _sphere;
+        private IHemiSphere _sphere;
 
         private HeightMapUpdater _heightMapUpdater;
 
@@ -35,6 +36,8 @@ namespace PromvrTestTask
 
         public void Initialize()
         {
+            Validate();
+
             _fillingMapShader = Instantiate(_fillingMapShader);
 
             _heightMapUpdater = new HeightMapUpdater(_fillingMapShader);
@@ -42,7 +45,7 @@ namespace PromvrTestTask
             CreateTexture();
         }
 
-        public void SetData(InputService inputService, HemiSphereController sphere, float planeSideSize)
+        public void SetData(IInputService inputService, IHemiSphere sphere, float planeSideSize)
         {
             _inputService = inputService;
             _sphere = sphere;
@@ -64,6 +67,13 @@ namespace PromvrTestTask
             _heightMapUpdater.Update(_sphere.Position, _sphere.Radius, _currentAccumulationSpeed, deltaTime);
 
             _currentAccumulationSpeed += _additiveSpeedPerSecondFactor * _accumulationMaterialSpeed * deltaTime;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void Validate()
+        {
+            if (_fillingMapShader == null)
+                throw new NullReferenceException("Filling Height Map Compute Shader is null");
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -90,7 +100,11 @@ namespace PromvrTestTask
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void OnReset() => _heightMapUpdater.Reset();
+        private void OnReset()
+        {
+            _isFilling = false;
+            _heightMapUpdater.Reset();
+        }
 
         private void OnDestroy()
         {
