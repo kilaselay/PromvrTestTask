@@ -84,6 +84,7 @@ namespace PromvrTestTask
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void CalculateSphere(ref Vector3 sphere, Vector3 spherePosition, float sphereRadius)
         {
+            //Optimal form for GPU -> one Vector3, one GPU request, instead Vector2 and float: 2 request
             sphere.x = spherePosition.x;
             sphere.y = spherePosition.z;
             sphere.z = sphereRadius;
