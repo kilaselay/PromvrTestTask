@@ -1,0 +1,73 @@
+#pragma kernel UpdateMap
+#pragma kernel ResetMap
+
+RWTexture2D<float> heightMap;
+
+int textureSize;
+float planeSize;
+
+float accumulationMaterialSpeed;
+float deltaTime;
+
+float3 previousWorldSphere;
+float3 currentWorldSphere;
+
+int Inverse(int value)
+{
+    return 1 - value;
+}
+
+int IsPixelInTrace(float2 pixel, float2 centerA, float2 centerB, float radiusA, float radiusB, out float height)
+{
+    float2 AP = centerA - pixel;
+    float2 AB = centerB - centerA;
+    
+    float squaredAB = dot(AB, AB);
+
+    int isValidSquaredAB = squaredAB > 0;
+    
+    float t = clamp((dot(AP, AB) / (isValidSquaredAB * squaredAB + Inverse(isValidSquaredAB) * 0.0001)), 0.0, 1.0);
+
+    float currentRadius = lerp(radiusA, radiusB, t);
+    
+    float2 Q = centerA + AB * t;
+    
+    float dist = distance(pixel, Q);
+    
+    int isPixelInTrace = dist < currentRadius;
+    
+    height = 1.0 - dist / currentRadius;
+    
+    return isPixelInTrace;
+}
+
+// xy: textureSize
+[numthreads(32, 32, 1)]
+void UpdateMap (uint3 id : SV_DispatchThreadID)
+{
+    float2 positionUV = float2((float) id.x / textureSize, (float) id.y / textureSize);
+    
+    float2 previousSphereCenterUV = float2(previousWorldSphere.x / planeSize + 0.5, previousWorldSphere.y / planeSize + 0.5);
+    float2 currentSphereCenterUV = float2(currentWorldSphere.x / planeSize + 0.5, currentWorldSphere.y / planeSize + 0.5);
+    
+    float2 radiusesUV = float2(previousWorldSphere.z / planeSize, currentWorldSphere.z / planeSize);
+    
+    float currentMaxHeight;
+    
+    int isFillFactor = IsPixelInTrace(positionUV, previousSphereCenterUV, currentSphereCenterUV, radiusesUV.x, radiusesUV.y, currentMaxHeight);
+    
+    float additiveHeight = currentMaxHeight * accumulationMaterialSpeed * deltaTime;
+    
+    float currentValue = heightMap[id.xy];
+    
+    float newValue = currentValue + isFillFactor * min(additiveHeight, 1.0 - currentValue);
+    
+    heightMap[id.xy] = min(newValue, 1.0);
+}
+
+// xy: textureSize
+[numthreads(32, 32, 1)]
+void ResetMap(uint3 id : SV_DispatchThreadID)
+{
+    heightMap[id.xy] = 0.0;
+}
